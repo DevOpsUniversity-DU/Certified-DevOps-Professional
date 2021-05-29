@@ -1,0 +1,65 @@
+---
+- hosts:  ubuntu
+  become: yes
+  tasks:
+   - name: Install Java 1.8
+     apt: 
+      name: openjdk-8-jdk 
+      state: present
+   - name: add group "tomcat"
+     group: 
+       name: tomcat
+   - name: add user "tomcat"
+     user: 
+      name: tomcat 
+      group: tomcat 
+      createhome: no
+   - name: Download Tomcat
+     get_url: 
+       url: https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.40/bin/apache-tomcat-8.5.40.tar.gz 
+       dest: /tmp/apache-tomcat-8.5.40.tar.gz
+   - name: Extract archive
+     unarchive: 
+        src: /tmp/apache-tomcat-8.5.40.tar.gz 
+        dest: /opt
+        remote_src: yes
+   - name: create symlink
+     file: 
+       src: /opt/apache-tomcat-8.5.40
+       path: /opt/tomcat
+       state: link
+
+   - name: Change ownership of Tomcat installation
+     file: 
+       path: /opt/tomcat 
+       owner: tomcat 
+       group: tomcat 
+       mode: 0755 
+       state: directory 
+       recurse: yes
+
+   - name: create tomcat.service file
+     file:
+      path: /etc/systemd/system/tomcat.service
+      state: touch
+   - name: create tomcat service
+     blockinfile:
+       path: /etc/systemd/system/tomcat.service
+       block: |
+         [Unit]
+         Description=Tomcat - instance %i
+         After=syslog.target network.target
+         [Service]
+         Type=forking
+         User=tomcat
+         Group=tomcat
+         Environment="CATALINA_HOME=/opt/tomcat/"
+         ExecStart=/opt/tomcat/bin/startup.sh
+         ExecStop=/opt/tomcat/bin/shutdown.sh
+         [Install]
+         WantedBy=multi-user.target
+   - name: enable & start tomcat service
+     systemd:
+        name: tomcat
+        state: started
+        enabled: yes

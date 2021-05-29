@@ -1,0 +1,27 @@
+- name: copy
+  file:
+    path: /tmp/testfile 
+    state: touch
+
+- name: configure
+  include_tasks: configure-user.yml
+
+- name: Install Java
+  include_tasks: install-java.yml
+
+- name: Install Tomcat
+  include_tasks: install-tomcat.yml 
+
+- name: understand defaults dir
+  debug:
+     msg: "this variable is from defaults dir: {{ dvar }}"
+
+- name: understand vars dir
+  debug:
+     msg: "this variable is from vars dir {{ abc }}"
+
+- name: understand templates
+  template:
+    src: app.props
+    dest: /app
+
